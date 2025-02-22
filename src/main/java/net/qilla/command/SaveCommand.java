@@ -1,0 +1,52 @@
+package net.qilla.command;
+
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.minestom.server.command.ConsoleSender;
+import net.minestom.server.command.builder.Command;
+import net.minestom.server.command.builder.arguments.ArgumentType;
+import net.minestom.server.entity.Player;
+import net.minestom.server.instance.Instance;
+import net.minestom.server.instance.InstanceManager;
+import net.qilla.file.PlayerDataFile;
+import org.jetbrains.annotations.NotNull;
+
+public class SaveCommand extends Command {
+
+    private static final String NAME = "save";
+    private static final String[] ALIASES = {};
+
+    private static final String ARG_INSTANCES = "instances";
+    private static final String ARG_CURRENT_INSTANCE = "current";
+    private static final String ARG_GLOBAL_INSTANCE = "global";
+    private static final String ARG_PLAYER_DATA = "player_data";
+
+
+    public SaveCommand(@NotNull InstanceManager instanceMan) {
+        super(NAME, ALIASES);
+
+        super.setCondition((sender, input) -> {
+            if((sender instanceof Player player && player.getPermissionLevel() > 3)) return true;
+            if(sender instanceof ConsoleSender) return true;
+            return false;
+        });
+
+        super.addSyntax((sender, context) -> {
+            instanceMan.getInstances().forEach(Instance::saveInstance);
+            sender.sendMessage(MiniMessage.miniMessage().deserialize("<green>All server instances have been saved!"));
+        }, ArgumentType.Literal(ARG_INSTANCES), ArgumentType.Literal(ARG_GLOBAL_INSTANCE));
+
+        super.addConditionalSyntax((sender, commandStr) -> {
+            return sender instanceof Player;
+        }, (sender, context) -> {
+            Player player = (Player) sender;
+            Instance instance = player.getInstance();
+            instance.saveInstance();
+            sender.sendMessage(MiniMessage.miniMessage().deserialize("<green>The current server instance has been saved!"));
+        },ArgumentType.Literal(ARG_INSTANCES), ArgumentType.Literal(ARG_CURRENT_INSTANCE));
+
+        super.addSyntax((sender, context) -> {
+            PlayerDataFile.getInstance().save();
+            sender.sendMessage(MiniMessage.miniMessage().deserialize("<green>Player data has been successfully saved!"));
+        }, ArgumentType.Literal(ARG_PLAYER_DATA));
+    }
+}
