@@ -6,6 +6,7 @@ import com.google.gson.reflect.TypeToken;
 import net.minestom.server.MinecraftServer;
 import net.qilla.data.PDRegistry;
 import net.qilla.data.PlayerData;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
 import java.io.*;
@@ -21,11 +22,12 @@ public final class PlayerDataFile {
 
     private static PlayerDataFile INSTANCE;
 
-    private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
-    private final Type type = new TypeToken<List<PlayerData>>() {
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Type TYPE = new TypeToken<PlayerData>() {
     }.getType();
-    private final String defaultLoc = "player_data.json";
-    private final Path filePath = Path.of("player_data.json");
+    private static final String DEFAULT_FILE = "player_data.json";
+    private static final Path DIRECTORY = Path.of("player_data");
+    private static final Path OLD_DIRECTORY = DIRECTORY.resolve("old");
     private final Logger logger = MinecraftServer.LOGGER;
 
     public static PlayerDataFile getInstance() {
@@ -36,61 +38,66 @@ public final class PlayerDataFile {
     public PlayerDataFile() {
     }
 
-    public void load() {
-        logger.info("Loading player permissions file from '{}'...", filePath);
+    public void load(@NotNull UUID uuid) {
+        logger.info("Loading PlayerData file for {}...", uuid);
+        final Path filePath = DIRECTORY.resolve(uuid + ".json");
 
-        this.ensureFileExists();
         try(BufferedReader reader = Files.newBufferedReader(filePath, StandardCharsets.UTF_8)) {
-            List<PlayerData> list = gson.fromJson(reader, type);
-            PDRegistry.getInstance().set(list);
+            PlayerData playerData = GSON.fromJson(reader, TYPE);
+            PDRegistry.getInstance().set(playerData);
         } catch(IOException e) {
-            this.resetFile();
-            logger.error("There was a problem loading '{}'. File will be reset!", filePath, e);
+            this.reset(uuid);
+            logger.error("There was a problem loading '{}', now creating new file.", filePath, e);
         }
-        logger.info("Player permissions have been successfully loaded!");
+        logger.info("PlayerData for {} has been successfully loaded!", uuid);
     }
 
-    public void clear() {
-        PDRegistry.getInstance().clear();
-    }
+    private void createFile(@NotNull UUID uuid) {
+        final Path filePath = DIRECTORY.resolve(uuid + ".json");
 
-    private void ensureFileExists() {
         if(Files.exists(filePath)) return;
 
-        logger.info("{} does not exist, creating new file.", filePath);
+        logger.info("PlayerData for {} does not exist, creating new.", uuid);
         try {
-            URL resourceURL = getClass().getClassLoader().getResource(defaultLoc);
-            if(resourceURL == null) throw new FileNotFoundException("Default resource not found: " + defaultLoc);
+            Files.createDirectories(filePath.getParent());
+            URL resourceURL = getClass().getClassLoader().getResource(DEFAULT_FILE);
+            if(resourceURL == null) throw new FileNotFoundException("Uh oh... default resource does not exist:\n" + DEFAULT_FILE);
 
             try(InputStream inputStream = resourceURL.openStream()) {
                 Files.copy(inputStream, filePath);
             }
-
         } catch(IOException e) {
-            logger.error("Failed to create file at {}", filePath, e);
+            logger.error("Failed to create {}", filePath, e);
         }
     }
 
-    public void resetFile() {
+    public void reset(@NotNull UUID uuid) {
+        final Path filePath = DIRECTORY.resolve(uuid + ".json");
         try {
             if(Files.exists(filePath)) {
-                Path backupPath = filePath.resolveSibling(filePath.getFileName() + ".old");
-                Files.move(filePath, backupPath, StandardCopyOption.REPLACE_EXISTING);
+                Files.move(filePath, OLD_DIRECTORY, StandardCopyOption.REPLACE_EXISTING);
             }
-            ensureFileExists();
+            this.createFile(uuid);
         } catch(IOException e) {
-            logger.error("Failed to reset file at {}", filePath, e);
+            logger.error("Failed to reset PlayerData for {}", uuid, e);
         }
     }
 
-    public void save() {
-        try(BufferedWriter writer = Files.newBufferedWriter(filePath, StandardCharsets.UTF_8)) {
-            List<PlayerData> registryList = PDRegistry.getInstance().getList();
+    public void save(@NotNull PlayerData playerData) {
+        final Path filePath = DIRECTORY.resolve(playerData.getUUID() + ".json");
+        if(!Files.exists(filePath)) this.createFile(playerData.getUUID());
 
-            gson.toJson(registryList, type, writer);
-            logger.info("Successfully saved data to {}", filePath);
+        final UUID uuid = playerData.getUUID();
+        try(BufferedWriter writer = Files.newBufferedWriter(filePath, StandardCharsets.UTF_8)) {
+            GSON.toJson(playerData, TYPE, writer);
+            logger.info("Successfully saved PlayerData for {}!", uuid);
         } catch(IOException e) {
-            logger.error("Failed to save file in {}", filePath, e);
+            logger.error("Failed to save {}'s PlayerData", uuid, e);
         }
+    }
+
+    public boolean exists(@NotNull UUID uuid) {
+        final Path filePath = DIRECTORY.resolve(uuid + ".json");
+        return Files.exists(filePath);
     }
 }

@@ -2,6 +2,7 @@ package net.qilla.data;
 
 import net.minestom.server.entity.PlayerSkin;
 import net.minestom.server.utils.mojang.MojangUtils;
+import net.qilla.file.PlayerDataFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -11,6 +12,7 @@ import java.util.*;
 public final class PlayerData {
 
     private static final int INFO_UPDATE_INTERVAL = 120 * 1000;
+    private static final PlayerDataFile PLAYER_DATA_FILE = PlayerDataFile.getInstance();
 
     private final UUID uuid;
     private volatile int permissionLevel;
@@ -35,7 +37,7 @@ public final class PlayerData {
         this.priorPunishments = new HashSet<>();
     }
 
-    public @NotNull UUID getUuid() {
+    public @NotNull UUID getUUID() {
         return uuid;
     }
 
@@ -120,22 +122,27 @@ public final class PlayerData {
     public synchronized void setSkin(PlayerSkin skin) {
         this.skin = skin;
         lastSkinUpdate = System.currentTimeMillis();
+        PLAYER_DATA_FILE.save(this);
     }
 
     public synchronized void setPermissionLevel(int permissionLevel) {
         this.permissionLevel = permissionLevel;
+        PLAYER_DATA_FILE.save(this);
     }
 
     public synchronized void updateLastLogin() {
         lastLogin = System.currentTimeMillis();
+        PLAYER_DATA_FILE.save(this);
     }
 
     public synchronized void updateLastLogout() {
         lastLogout = System.currentTimeMillis();
+        PLAYER_DATA_FILE.save(this);
     }
 
     public synchronized void setWhitelisted(boolean whitelisted) {
         this.whitelisted = whitelisted;
+        PLAYER_DATA_FILE.save(this);
     }
 
     public void setMuted(@Nullable UUID by, @NotNull String reason, long on, long expiration) {
@@ -143,6 +150,7 @@ public final class PlayerData {
             activePunishments.add(new PlayerPunishment(PlayerPunishment.PunishmentType.MUTE,
                     on, by, reason, expiration));
         }
+        PLAYER_DATA_FILE.save(this);
     }
 
     public void setMuted(@Nullable UUID by, @NotNull String reason, long on) {
@@ -150,6 +158,7 @@ public final class PlayerData {
             activePunishments.add(new PlayerPunishment(PlayerPunishment.PunishmentType.MUTE,
                     on, by, reason, PlayerPunishment.PERMANENT));
         }
+        PLAYER_DATA_FILE.save(this);
     }
 
     public @NotNull PlayerPunishment setKicked(@Nullable UUID by, @NotNull String reason, long on) {
@@ -159,8 +168,8 @@ public final class PlayerData {
         synchronized(activePunishments) {
             activePunishments.add(punishment);
         }
+        PLAYER_DATA_FILE.save(this);
         return punishment;
-
     }
 
     public @NotNull PlayerPunishment setBlackListed(@Nullable UUID by, @NotNull String reason, long on, long expiration) {
@@ -169,6 +178,7 @@ public final class PlayerData {
         synchronized(activePunishments) {
             activePunishments.add(punishment);
         }
+        PLAYER_DATA_FILE.save(this);
         return punishment;
     }
 }

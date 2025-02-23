@@ -15,7 +15,6 @@ import net.minestom.server.network.player.PlayerConnection;
 import net.qilla.data.PDRegistry;
 import net.qilla.data.PlayerData;
 import net.qilla.data.PlayerPunishment;
-import net.qilla.file.PlayerDataFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import java.util.UUID;
@@ -31,7 +30,6 @@ public final class QPlayer extends Player {
 
         super.setRespawnPoint(new Pos(0, 153, 0));
         super.setPermissionLevel(playerData.getPermissionLevel());
-        PlayerDataFile.getInstance().save();
     }
 
     @Override

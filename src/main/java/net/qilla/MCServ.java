@@ -10,7 +10,10 @@ import net.minestom.server.network.ConnectionManager;
 import net.minestom.server.registry.DynamicRegistry;
 import net.minestom.server.world.DimensionType;
 import net.qilla.command.*;
+import net.qilla.data.PDRegistry;
+import net.qilla.data.ServerSettings;
 import net.qilla.file.PlayerDataFile;
+import net.qilla.file.ServerSettingsFile;
 import net.qilla.instance.SetupListeners;
 import net.qilla.instance.custom.MainGeneration;
 import net.qilla.player.QPlayer;
@@ -42,8 +45,13 @@ public final class MCServ {
     }
 
     public void init() {
-        connectionMan.setPlayerProvider(QPlayer::new);
-        PlayerDataFile.getInstance().load();
+        ServerSettingsFile serverSettings = ServerSettingsFile.getInstance();
+        if(serverSettings.exists()) {
+            serverSettings.load();
+        } else {
+            ServerSettings.createNew();
+            serverSettings.save();
+        }
 
         DimensionType mainDimension = DimensionType.builder()
                 .minY(0)
@@ -72,6 +80,8 @@ public final class MCServ {
             event.setSpawningInstance(mainInstance);
         });
 
+        connectionMan.setPlayerProvider(QPlayer::new);
+
         SetupListeners.initEvent(eventHandler, instanceMan);
         SetupListeners.initPacket(packetListenerMan);
         this.loadCommands();
@@ -80,7 +90,9 @@ public final class MCServ {
 
     public void shutdown() {
         MinecraftServer.stopCleanly();
-        PlayerDataFile.getInstance().save();
+        PDRegistry.getInstance().getAll().forEach(playerData -> {
+            PlayerDataFile.getInstance().save(playerData);
+        });
     }
 
     private void loadCommands() {

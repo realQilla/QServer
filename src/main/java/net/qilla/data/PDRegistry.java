@@ -1,6 +1,5 @@
 package net.qilla.data;
 
-import net.qilla.file.PlayerDataFile;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -12,8 +11,7 @@ public final class PDRegistry {
 
     private static PDRegistry INSTANCE;
 
-    private final PlayerDataFile playerDataFile = PlayerDataFile.getInstance();
-    private final Map<UUID, PlayerData> persistentData = new ConcurrentHashMap<>();
+    private final Map<UUID, PlayerData> playerData = new ConcurrentHashMap<>();
 
     private PDRegistry() {
     }
@@ -23,25 +21,22 @@ public final class PDRegistry {
         return INSTANCE;
     }
 
-    public @NotNull PlayerData get(UUID uuid) {
-        return persistentData.compute(uuid, (k, v) -> {
+    public @NotNull PlayerData get(@NotNull UUID uuid) {
+        return playerData.compute(uuid, (k, v) -> {
             if(v == null) v = new PlayerData(uuid);
             return v;
         });
     }
 
-    public void set(List<PlayerData> list) {
-        this.clear();
-        for(PlayerData data : list) {
-            persistentData.put(data.getUuid(), data);
-        }
+    public void set(@NotNull PlayerData playerData) {
+        this.playerData.put(playerData.getUUID(), playerData);
     }
 
-    public @NotNull List<PlayerData> getList() {
-        return List.copyOf(persistentData.values());
+    public boolean has(UUID uuid) {
+        return playerData.containsKey(uuid);
     }
 
-    public void clear() {
-        persistentData.clear();
+    public @NotNull List<PlayerData> getAll() {
+        return List.copyOf(playerData.values());
     }
 }

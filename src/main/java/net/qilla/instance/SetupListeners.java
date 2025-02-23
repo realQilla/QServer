@@ -17,19 +17,22 @@ import net.minestom.server.network.packet.client.play.ClientPickItemFromEntityPa
 import net.qilla.data.PDRegistry;
 import net.qilla.data.PlayerData;
 import net.qilla.data.PlayerPunishment;
+import net.qilla.data.ServerSettings;
 import net.qilla.event.PlayerPickBlockEvent;
+import net.qilla.file.PlayerDataFile;
 import net.qilla.listener.PickBlockListener;
 import net.qilla.listener.PickEntityListener;
 import net.qilla.util.MsgFormat;
 import net.qilla.util.MsgUtil;
 import org.slf4j.Logger;
-
 import java.net.SocketAddress;
 import java.util.UUID;
 
 public final class SetupListeners {
 
     private static final Logger LOGGER = MinecraftServer.LOGGER;
+    private static final PlayerDataFile PLAYER_DATA_FILE = PlayerDataFile.getInstance();
+    private static final ServerSettings SERVER_SETTINGS = ServerSettings.getInstance();
 
     private SetupListeners() {
     }
@@ -58,25 +61,38 @@ public final class SetupListeners {
         });
 
         eventHandler.addListener(PlayerDisconnectEvent.class, event -> {
-            MsgUtil.send(MiniMessage.miniMessage().deserialize("<green><yellow>" + event.getPlayer().getUsername() + "</yellow> has disconnected."));
+            final Player player = event.getPlayer();
+            final PlayerData playerData = PDRegistry.getInstance().get(player.getUuid());
+
+            MsgUtil.send(MiniMessage.miniMessage().deserialize("<green><yellow>" + player.getUsername() + "</yellow> has disconnected."));
+            playerData.updateLastLogout();
         });
 
         eventHandler.addListener(PlayerSpawnEvent.class, event -> {
             final Player player = event.getPlayer();
+            final PlayerData playerData = PDRegistry.getInstance().get(player.getUuid());
 
             MsgUtil.send(MiniMessage.miniMessage().deserialize("<green><yellow>" + player.getUsername() + "</yellow> has connected."));
+            playerData.updateLastLogin();
         });
 
         eventHandler.addListener(PlayerSkinInitEvent.class, event -> {
-            Player player = event.getPlayer();
-            PlayerData playerData = PDRegistry.getInstance().get(player.getUuid());
+            final Player player = event.getPlayer();
+            final PlayerData playerData = PDRegistry.getInstance().get(player.getUuid());
 
             event.setSkin(playerData.getSkin());
         });
 
         eventHandler.addListener(AsyncPlayerPreLoginEvent.class, event -> {
-            UUID uuid = event.getGameProfile().uuid();
-            PlayerData playerData = PDRegistry.getInstance().get(uuid);
+            final UUID uuid = event.getGameProfile().uuid();
+
+            if(!PDRegistry.getInstance().has(uuid)) {
+                if(!PLAYER_DATA_FILE.exists(uuid)) {
+                    PLAYER_DATA_FILE.save(new PlayerData(uuid));
+                }
+                PLAYER_DATA_FILE.load(uuid);
+            }
+            final PlayerData playerData = PDRegistry.getInstance().get(uuid);
 
             PlayerPunishment playerPunishment = playerData.lookupActive();
             if(playerPunishment != null) {
@@ -84,7 +100,7 @@ public final class SetupListeners {
                 return;
             }
 
-            if(!playerData.isWhitelisted()) {
+            if(SERVER_SETTINGS.isWhitelistEnabled() && !playerData.isWhitelisted()) {
                 event.getConnection().kick(MsgFormat.whitelisted());
                 return;
             }
@@ -95,6 +111,14 @@ public final class SetupListeners {
 
             if(player.getPermissionLevel() < 2 ) event.setCancelled(true);
         });
+
+        eventHandler.addListener(PlayerBlockPlaceEvent.class, event -> {
+            final Player player = event.getPlayer();
+
+            if(player.getPermissionLevel() < 2 ) event.setCancelled(true);
+        });
+
+
 
         eventHandler.addListener(ClientPingServerEvent.class, event -> {
             SocketAddress address = event.getConnection().getRemoteAddress();

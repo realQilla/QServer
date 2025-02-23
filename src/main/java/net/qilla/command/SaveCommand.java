@@ -7,6 +7,7 @@ import net.minestom.server.command.builder.arguments.ArgumentType;
 import net.minestom.server.entity.Player;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.InstanceManager;
+import net.qilla.data.PDRegistry;
 import net.qilla.file.PlayerDataFile;
 import org.jetbrains.annotations.NotNull;
 
@@ -49,8 +50,10 @@ public final class SaveCommand extends Command {
         },ArgumentType.Literal(ARG_INSTANCES), ArgumentType.Literal(ARG_CURRENT_INSTANCE));
 
         super.addSyntax((sender, context) -> {
-            PlayerDataFile.getInstance().save();
-            sender.sendMessage(MiniMessage.miniMessage().deserialize("<green>Player data has been successfully saved!"));
+            PDRegistry.getInstance().getAll().forEach(playerData -> {
+                PlayerDataFile.getInstance().save(playerData);
+            });
+            sender.sendMessage(MiniMessage.miniMessage().deserialize("<green>Player data for all players has been successfully saved!"));
         }, ArgumentType.Literal(ARG_PLAYER_DATA));
     }
 }
