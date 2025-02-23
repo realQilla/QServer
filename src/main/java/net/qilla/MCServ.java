@@ -1,33 +1,20 @@
 package net.qilla;
 
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.ChunkRange;
-import net.minestom.server.coordinate.Pos;
-import net.minestom.server.entity.GameMode;
-import net.minestom.server.entity.Player;
 import net.minestom.server.event.GlobalEventHandler;
 import net.minestom.server.event.player.*;
 import net.minestom.server.instance.*;
-import net.minestom.server.inventory.PlayerInventory;
-import net.minestom.server.item.ItemStack;
-import net.minestom.server.item.Material;
 import net.minestom.server.listener.manager.PacketListenerManager;
 import net.minestom.server.network.ConnectionManager;
-import net.minestom.server.network.packet.client.play.ClientPickItemFromBlockPacket;
-import net.minestom.server.network.packet.client.play.ClientPickItemFromEntityPacket;
 import net.minestom.server.registry.DynamicRegistry;
 import net.minestom.server.world.DimensionType;
 import net.qilla.command.*;
-import net.qilla.data.PDRegistry;
-import net.qilla.data.PlayerData;
-import net.qilla.event.PlayerPickBlockEvent;
 import net.qilla.file.PlayerDataFile;
-import net.qilla.instance.MainGeneration;
-import net.qilla.listener.PickBlockListener;
-import net.qilla.listener.PickEntityListener;
+import net.qilla.instance.SetupListeners;
+import net.qilla.instance.custom.MainGeneration;
+import net.qilla.player.QPlayer;
 import org.slf4j.Logger;
-
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 
@@ -55,6 +42,7 @@ public final class MCServ {
     }
 
     public void init() {
+        connectionMan.setPlayerProvider(QPlayer::new);
         PlayerDataFile.getInstance().load();
 
         DimensionType mainDimension = DimensionType.builder()
@@ -80,59 +68,12 @@ public final class MCServ {
             LightingChunk.relight(mainInstance, mainInstance.getChunks());
         });
 
-        eventHandler.addListener(PlayerPickBlockEvent.class, event -> {
-            Player player = event.getPlayer();
-
-            if(player.getGameMode() != GameMode.CREATIVE) return;
-
-            Material clickedMaterial = event.getMaterial();
-            PlayerInventory inventory = player.getInventory();
-
-            for(int i = 0; i < 9; i++) {
-                if(clickedMaterial.equals(inventory.getItemStack(i).material())) {
-                    player.setHeldItemSlot((byte) i);
-                    return;
-                }
-            }
-            player.setItemInMainHand(ItemStack.of(event.getMaterial()));
-        });
-
         eventHandler.addListener(AsyncPlayerConfigurationEvent.class, event -> {
-            final Player player = event.getPlayer();
-            final PlayerData playerData = PDRegistry.getInstance().get(player.getUuid());
-
             event.setSpawningInstance(mainInstance);
-            player.setPermissionLevel(playerData.getPermissionLevel());
-            PlayerDataFile.getInstance().save();
-            player.setRespawnPoint(new Pos(0, 153, 0));
         });
 
-        eventHandler.addListener(PlayerChatEvent.class, event -> {
-            final Player player = event.getPlayer();
-            event.setFormattedMessage(MiniMessage.miniMessage().deserialize("<gold>" + player.getUsername() + "<white>: " + event.getRawMessage()));
-        });
-
-        eventHandler.addListener(PlayerSpawnEvent.class, event -> {
-            final Player player = event.getPlayer();
-            final PlayerData playerData = PDRegistry.getInstance().get(player.getUuid());
-
-            player.setSkin(playerData.getSkin());
-            player.setGameMode(GameMode.SURVIVAL);
-        });
-
-        eventHandler.addListener(PlayerDisconnectEvent.class, event -> {
-            connectionMan.getOnlinePlayers().forEach(instance -> {
-                instance.sendMessage(MiniMessage.miniMessage().deserialize("<green><yellow>" + event.getPlayer().getUsername() + "</yellow> has disconnected."));
-            });
-        });
-
-        eventHandler.addListener(PlayerSpawnEvent.class, event -> {
-            connectionMan.getOnlinePlayers().forEach(instance -> {
-                instance.sendMessage(MiniMessage.miniMessage().deserialize("<green><yellow>" + event.getPlayer().getUsername() + "</yellow> has connected."));
-            });
-        });
-
-        this.customListeners();
+        SetupListeners.initEvent(eventHandler, instanceMan);
+        SetupListeners.initPacket(packetListenerMan);
         this.loadCommands();
         this.minecraftServer.start(address, port);
     }
@@ -140,11 +81,6 @@ public final class MCServ {
     public void shutdown() {
         MinecraftServer.stopCleanly();
         PlayerDataFile.getInstance().save();
-    }
-
-    private void customListeners() {
-        packetListenerMan.setPlayListener(ClientPickItemFromBlockPacket.class, PickBlockListener::pickBlockListener);
-        packetListenerMan.setPlayListener(ClientPickItemFromEntityPacket.class, PickEntityListener::pickEntityListener);
     }
 
     private void loadCommands() {
@@ -155,5 +91,9 @@ public final class MCServ {
         MinecraftServer.getCommandManager().register(new KillCommand());
         MinecraftServer.getCommandManager().register(new SummonCommand());
         MinecraftServer.getCommandManager().register(new TeleportCommand());
+        MinecraftServer.getCommandManager().register(new RemoveCommand());
+        MinecraftServer.getCommandManager().register(new BlacklistCommand(connectionMan));
+        MinecraftServer.getCommandManager().register(new GetCommand());
+        MinecraftServer.getCommandManager().register(new ClearCommand());
     }
 }

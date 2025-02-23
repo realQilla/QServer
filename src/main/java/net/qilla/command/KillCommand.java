@@ -15,7 +15,7 @@ import net.qilla.util.StringUtil;
 import java.util.ArrayList;
 import java.util.List;
 
-public class KillCommand extends Command {
+public final class KillCommand extends Command {
 
     private static final String NAME = "kill";
     private static final String[] ALIASES = {};
@@ -29,6 +29,10 @@ public class KillCommand extends Command {
             if((sender instanceof Player player && player.getPermissionLevel() > 2)) return true;
             if(sender instanceof ConsoleSender) return true;
             return false;
+        });
+
+        super.setDefaultExecutor((sender, context) -> {
+            sender.sendMessage(MiniMessage.miniMessage().deserialize("<red>You specified a malformed command, try again with valid arguments."));
         });
 
         ArgumentEntity entityArgument = ArgumentType.Entity(ARG_ENTITY);
@@ -60,13 +64,13 @@ public class KillCommand extends Command {
         List<String> strList = new ArrayList<>();
 
         for(Entity target : entities) strList.add(this.killEntity(target));
-        sender.sendMessage(MiniMessage.miniMessage().deserialize("<green>You have successfully killed <yellow>" + StringUtil.toLimitedNameList(strList, ", ", 1) + "...</yellow> and " + (strList.size() - 1) + " more!"));
+        sender.sendMessage(MiniMessage.miniMessage().deserialize("<green>You have successfully killed <yellow>" +
+                StringUtil.toLimitedNameList(strList, ", ", 1) + " and " + (strList.size() - 1) + " " + StringUtil.pluralize("other", strList.size() - 1) + "</yellow>!"));
     }
 
     private String killEntity(Entity target) {
         if(target instanceof Player playerTarget) {
             playerTarget.kill();
-            playerTarget.respawn();
             return playerTarget.getUsername();
         } else if(target instanceof LivingEntity livingTarget) {
             livingTarget.kill();

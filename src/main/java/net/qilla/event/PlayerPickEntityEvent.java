@@ -7,7 +7,7 @@ import net.minestom.server.event.trait.PlayerInstanceEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class PlayerPickEntityEvent implements PlayerInstanceEvent, CancellableEvent {
+public final class PlayerPickEntityEvent implements PlayerInstanceEvent, CancellableEvent {
     private final Player player;
     private Entity entity;
     private boolean cancelled;

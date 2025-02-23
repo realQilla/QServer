@@ -10,7 +10,7 @@ import net.minestom.server.instance.InstanceManager;
 import net.qilla.file.PlayerDataFile;
 import org.jetbrains.annotations.NotNull;
 
-public class SaveCommand extends Command {
+public final class SaveCommand extends Command {
 
     private static final String NAME = "save";
     private static final String[] ALIASES = {};
@@ -28,6 +28,10 @@ public class SaveCommand extends Command {
             if((sender instanceof Player player && player.getPermissionLevel() > 3)) return true;
             if(sender instanceof ConsoleSender) return true;
             return false;
+        });
+
+        super.setDefaultExecutor((sender, context) -> {
+            sender.sendMessage(MiniMessage.miniMessage().deserialize("<red>You specified a malformed command, try again with valid arguments."));
         });
 
         super.addSyntax((sender, context) -> {

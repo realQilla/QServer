@@ -1,4 +1,4 @@
-package net.qilla.instance;
+package net.qilla.instance.custom;
 
 import de.articdive.jnoise.generators.noisegen.perlin.PerlinNoiseGenerator;
 import de.articdive.jnoise.modules.octavation.fractal_functions.FractalFunction;
@@ -11,15 +11,15 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Random;
 
-public class MainGeneration implements Generator {
+public final class MainGeneration implements Generator {
 
     private static MainGeneration INSTANCE;
 
-    private final Random random = new Random(42);
-    private JNoise worldNoise;
+    private final Random random = new Random();
+    private final JNoise worldNoise;
 
-    private JNoise cheeseCave;
-    private JNoise bedrockNoise;
+    private final JNoise cheeseCave;
+    private final JNoise bedrockNoise;
 
     public static MainGeneration get() {
         if(INSTANCE == null) INSTANCE = new MainGeneration();
@@ -55,7 +55,7 @@ public class MainGeneration implements Generator {
         int chunkX = unit.absoluteStart().blockX() >> 4;
         int chunkZ = unit.absoluteStart().blockZ() >> 4;
 
-        //if(Math.abs(chunkX) > 8 || Math.abs(chunkZ) > 8) return;
+        if(Math.abs(chunkX) > 16 || Math.abs(chunkZ) > 16) return;
 
         Point start = unit.absoluteStart();
         for(int x = 0; x < unit.size().x(); x++) {

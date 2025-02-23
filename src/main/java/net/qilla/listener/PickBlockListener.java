@@ -7,7 +7,7 @@ import net.minestom.server.item.Material;
 import net.minestom.server.network.packet.client.play.ClientPickItemFromBlockPacket;
 import net.qilla.event.PlayerPickBlockEvent;
 
-public class PickBlockListener {
+public final class PickBlockListener {
 
     public static void pickBlockListener(ClientPickItemFromBlockPacket packet, Player player) {
         Block block = player.getInstance().getBlock(packet.pos(), Block.Getter.Condition.NONE);

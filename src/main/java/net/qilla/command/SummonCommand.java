@@ -8,8 +8,9 @@ import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.Player;
 import net.minestom.server.instance.Instance;
+import net.qilla.util.StringUtil;
 
-public class SummonCommand extends Command {
+public final class SummonCommand extends Command {
 
     private static final String NAME = "summon";
     private static final String[] ALIASES = {"spawn", "create"};
@@ -24,6 +25,10 @@ public class SummonCommand extends Command {
             if(!(sender instanceof Player player)) return false;
             if(player.getPermissionLevel() < 3) return false;
             return true;
+        });
+
+        super.setDefaultExecutor((sender, context) -> {
+            sender.sendMessage(MiniMessage.miniMessage().deserialize("<red>You specified a malformed command, try again with valid arguments."));
         });
 
         var entityArgument = ArgumentType.EntityType(ARG_TYPE);
@@ -42,7 +47,7 @@ public class SummonCommand extends Command {
                 entity.setInstance(instance, position);
             }
 
-            sender.sendMessage(MiniMessage.miniMessage().deserialize("<green>You have successfully summoned " + amount + "x " + entityType.toString().toUpperCase() + "!"));
+            sender.sendMessage(MiniMessage.miniMessage().deserialize("<green>You have successfully summoned " + amount + "x " + StringUtil.pluralize(entityType.toString(), amount) + "!"));
         }, entityArgument, amountArgument);
     }
 }

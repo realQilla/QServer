@@ -7,7 +7,7 @@ import net.minestom.server.instance.block.Block;
 import net.minestom.server.item.Material;
 import org.jetbrains.annotations.NotNull;
 
-public class PlayerPickBlockEvent implements PlayerInstanceEvent, CancellableEvent {
+public final class PlayerPickBlockEvent implements PlayerInstanceEvent, CancellableEvent {
     private final Player player;
     private Block block;
     private Material material;

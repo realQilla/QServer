@@ -1,4 +1,4 @@
-package net.qilla.instance;
+package net.qilla.instance.custom;
 
 import de.articdive.jnoise.generators.noisegen.perlin.PerlinNoiseGenerator;
 import de.articdive.jnoise.modules.octavation.fractal_functions.FractalFunction;
@@ -9,7 +9,7 @@ import net.minestom.server.instance.generator.GenerationUnit;
 import net.minestom.server.instance.generator.Generator;
 import org.jetbrains.annotations.NotNull;
 
-public class NoiseGeneration implements Generator {
+public final class NoiseGeneration implements Generator {
 
     private static NoiseGeneration INSTANCE;
 

@@ -6,7 +6,6 @@ import net.minestom.server.command.builder.Command;
 import net.minestom.server.command.builder.arguments.ArgumentEnum;
 import net.minestom.server.command.builder.arguments.ArgumentType;
 import net.minestom.server.command.builder.arguments.minecraft.ArgumentEntity;
-import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.GameMode;
 import net.minestom.server.entity.Player;
 import net.minestom.server.utils.entity.EntityFinder;
@@ -15,7 +14,7 @@ import net.qilla.util.StringUtil;
 import java.util.ArrayList;
 import java.util.List;
 
-public class GamemodeCommand extends Command {
+public final class GamemodeCommand extends Command {
 
     private static final String NAME = "gamemode";
     private static final String[] ALIASES = {"gm"};
@@ -32,12 +31,16 @@ public class GamemodeCommand extends Command {
             return false;
         });
 
+        super.setDefaultExecutor((sender, context) -> {
+            sender.sendMessage(MiniMessage.miniMessage().deserialize("<red>You specified a malformed command, try again with valid arguments."));
+        });
+
         ArgumentEnum<GameMode> argGamemode = ArgumentType.Enum(ARG_GAMEMODE, GameMode.class).setFormat(ArgumentEnum.Format.LOWER_CASED);
 
         super.addConditionalSyntax((sender, commandStr) -> {
             return sender instanceof Player;
         }, (sender, context) -> {
-            this.setPlayer((Player) sender, context.get(ARG_GAMEMODE));
+            this.setPlayerGamemode((Player) sender, context.get(ARG_GAMEMODE));
         }, argGamemode);
 
         ArgumentEntity argumentEntity = ArgumentType.Entity(ARG_TARGET).onlyPlayers(true);
@@ -54,26 +57,26 @@ public class GamemodeCommand extends Command {
 
             if(players.size() == 1) {
                 Player target = players.getFirst();
-                target.setGameMode(gameMode);
+                this.setPlayerGamemode(target, gameMode);
                 sender.sendMessage(MiniMessage.miniMessage().deserialize("<green>You have set <yellow>" +
                         target.getUsername() + "</yellow>'s gamemode to " + gameMode.name() + "!"));
                 return;
             }
             List<String> strList = new ArrayList<>();
 
-            for(Player target : players) {
-                target.setGameMode(gameMode);
-                strList.add(target.getUsername());
+            for(Player targetPlayer : players) {
+                this.setPlayerGamemode(targetPlayer, gameMode);
+                strList.add(targetPlayer.getUsername());
             }
             sender.sendMessage(MiniMessage.miniMessage().deserialize("<green>You have set <yellow>" +
                     StringUtil.toLimitedNameList(strList, ", ", 1) +
-                    "...</yellow> and " + (strList.size() - 1) + " others' gamemode to " + gameMode.name() + "!"));
+                    " and " + (strList.size() - 1) + " " + StringUtil.pluralize("other", strList.size() - 1) + "</yellow> gamemode to " + gameMode.name() + "!"));
 
         }, argGamemode, argumentEntity);
     }
 
-    private void setPlayer(Player player, GameMode gameMode) {
+    private void setPlayerGamemode(Player player, GameMode gameMode) {
         player.setGameMode(gameMode);
-        player.sendMessage(MiniMessage.miniMessage().deserialize("<green>Your gamemode has been set to " + gameMode.name() + "!"));
+        player.sendMessage(MiniMessage.miniMessage().deserialize("<green>Your gamemode has been set to <yellow>" + gameMode.name() + "</yellow>!"));
     }
 }

@@ -17,7 +17,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 
-public class PlayerDataFile {
+public final class PlayerDataFile {
 
     private static PlayerDataFile INSTANCE;
 

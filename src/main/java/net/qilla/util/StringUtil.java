@@ -91,4 +91,17 @@ public final class StringUtil {
 
         return builder.substring(0, length);
     }
+
+    public static @NotNull UUID formatUUID(@NotNull String uuid) {
+        System.out.println(uuid.length());
+        if(uuid.length() != 32) throw new IllegalArgumentException("UUID string must be 32 characters long: " + uuid);
+
+        String dashedUUID = uuid.substring(0, 8) + "-" +
+                uuid.substring(8, 12) + "-" +
+                uuid.substring(12, 16) + "-" +
+                uuid.substring(16, 20) + "-" +
+                uuid.substring(20, 32);
+
+        return UUID.fromString(dashedUUID);
+    }
 }

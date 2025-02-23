@@ -14,7 +14,7 @@ import net.qilla.util.NumberUtil;
 
 import java.util.List;
 
-public class TeleportCommand extends Command {
+public final class TeleportCommand extends Command {
 
     private static final String NAME = "teleport";
     private static final String[] ALIASES = {"tp"};
@@ -32,6 +32,10 @@ public class TeleportCommand extends Command {
             return true;
         });
 
+        super.setDefaultExecutor((sender, context) -> {
+            sender.sendMessage(MiniMessage.miniMessage().deserialize("<red>You specified a malformed command, try again with valid arguments."));
+        });
+
         ArgumentRelativeBlockPosition argRelativeBlockPos = ArgumentType.RelativeBlockPosition(ARG_POS);
 
         super.addConditionalSyntax((sender, commandStr) -> {
@@ -39,13 +43,13 @@ public class TeleportCommand extends Command {
         }, (sender, context) -> {
             Player player = (Player) sender;
             RelativeVec relativeVec = context.get(ARG_POS);
-            Pos pos = relativeVec.fromSender(sender).asPosition();
+            Pos pos = relativeVec.fromSender(sender).asPosition().withView(player.getPosition());
 
             player.teleport(pos);
-            player.sendMessage(MiniMessage.miniMessage().deserialize("<green>You have been teleported to " +
-                    NumberUtil.decimalTruncation(pos.x(), 1) + " " +
-                    NumberUtil.decimalTruncation(pos.y(), 1) + " " +
-                    NumberUtil.decimalTruncation(pos.z(), 1) + "!"));
+            player.sendMessage(MiniMessage.miniMessage().deserialize("<green>You have been teleported to <yellow>" +
+                    NumberUtil.decimalTruncation(pos.x(), 1) + ", " +
+                    NumberUtil.decimalTruncation(pos.y(), 1) + ", " +
+                    NumberUtil.decimalTruncation(pos.z(), 1) + "</yellow>!"));
         }, argRelativeBlockPos);
 
         ArgumentEntity argEntity = ArgumentType.Entity(ARG_ENTITY);
@@ -56,14 +60,14 @@ public class TeleportCommand extends Command {
             Player player = (Player) sender;
             EntityFinder entityFinder = context.get(argEntity);
             Entity entity = entityFinder.find(sender).getFirst();
+            Pos pos = entity.getPosition().withView(player.getPosition());
 
             if(entity instanceof Player playerTarget) {
-                player.teleport(playerTarget.getPosition());
                 player.sendMessage(MiniMessage.miniMessage().deserialize("<green>You have been teleported to <yellow>" + playerTarget.getUsername() + "</yellow>!"));
             } else {
-                player.teleport(entity.getPosition());
                 player.sendMessage(MiniMessage.miniMessage().deserialize("<green>You have been teleported to <yellow>" + entity.getUuid() + "</yellow>!"));
             }
+            player.teleport(pos);
         }, argEntity);
 
         ArgumentEntity argToTarget = ArgumentType.Entity(ARG_TO_TARGET).singleEntity(true);
@@ -73,9 +77,9 @@ public class TeleportCommand extends Command {
             List<Entity> targetEntity = targetEntityFinder.find(sender);
             EntityFinder toEntityFinder = context.get(argToTarget);
             Entity toEntity = toEntityFinder.find(sender).getFirst();
-            Pos pos = toEntity.getPosition();
 
             for(Entity entity : targetEntity) {
+                Pos pos = toEntity.getPosition().withView(entity.getPosition());
                 if(entity instanceof Player playerTarget) {
                     if(toEntity instanceof Player playerTo) {
                         playerTarget.sendMessage(MiniMessage.miniMessage().deserialize("<green>You have been teleported to <yellow>" + playerTo.getUsername() + "</yellow>!"));
@@ -91,14 +95,14 @@ public class TeleportCommand extends Command {
             EntityFinder targetEntityFinder = context.get(argEntity);
             List<Entity> targetEntity = targetEntityFinder.find(sender);
             RelativeVec relativeVec = context.get(ARG_POS);
-            Pos pos = relativeVec.fromSender(sender).asPosition();
 
             for(Entity entity : targetEntity) {
+                Pos pos = relativeVec.fromSender(sender).asPosition().withView(entity.getPosition());
                 if(entity instanceof Player playerTarget) {
                     playerTarget.sendMessage(MiniMessage.miniMessage().deserialize("<green>You have been teleported to <yellow>" +
-                            NumberUtil.decimalTruncation(pos.x(), 1) + " " +
-                            NumberUtil.decimalTruncation(pos.y(), 1) + " " +
-                            NumberUtil.decimalTruncation(pos.z(), 1) + "!"));
+                            NumberUtil.decimalTruncation(pos.x(), 1) + ", " +
+                            NumberUtil.decimalTruncation(pos.y(), 1) + ", " +
+                            NumberUtil.decimalTruncation(pos.z(), 1) + "</yellow>!"));
                 }
                 entity.teleport(pos);
             }
