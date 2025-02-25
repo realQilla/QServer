@@ -93,7 +93,6 @@ public final class StringUtil {
     }
 
     public static @NotNull UUID formatUUID(@NotNull String uuid) {
-        System.out.println(uuid.length());
         if(uuid.length() != 32) throw new IllegalArgumentException("UUID string must be 32 characters long: " + uuid);
 
         String dashedUUID = uuid.substring(0, 8) + "-" +

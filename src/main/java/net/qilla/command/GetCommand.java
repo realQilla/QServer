@@ -41,7 +41,9 @@ public final class GetCommand extends Command {
         ArgumentItemStack argItemStack = ArgumentType.ItemStack(ARG_ITEMSTACK);
         ArgumentNumber<Integer> argAmount = ArgumentType.Integer(ARG_AMOUNT).min(0);
 
-        super.addSyntax((sender, context) -> {
+        super.addConditionalSyntax((sender, commandStr) -> {
+            return sender instanceof Player;
+        }, (sender, context) -> {
             Player player = (Player) sender;
             ItemStack itemStack = context.get(argItemStack);
             final int amount = Math.min(itemStack.maxStackSize() * 36, context.get(ARG_AMOUNT));

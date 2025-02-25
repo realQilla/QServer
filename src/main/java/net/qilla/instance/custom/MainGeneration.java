@@ -7,6 +7,7 @@ import net.minestom.server.coordinate.Point;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.generator.GenerationUnit;
 import net.minestom.server.instance.generator.Generator;
+import net.minestom.server.world.DimensionType;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Random;
@@ -94,5 +95,13 @@ public final class MainGeneration implements Generator {
                 unit.modifier().fill(bottom.withY(bedrockHeight), bottom.add(1, 0, 1).withY(bedrockHeight + 8), Block.STONE);
             }
         }
+    }
+
+    public static DimensionType getDimension() {
+        return DimensionType.builder()
+                .minY(0)
+                .height(384)
+                .ambientLight(15)
+                .build();
     }
 }

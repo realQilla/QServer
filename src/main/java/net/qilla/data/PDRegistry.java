@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -22,10 +23,8 @@ public final class PDRegistry {
     }
 
     public @NotNull PlayerData get(@NotNull UUID uuid) {
-        return playerData.compute(uuid, (k, v) -> {
-            if(v == null) v = new PlayerData(uuid);
-            return v;
-        });
+        if(playerData.containsKey(uuid)) return playerData.get(uuid);
+        else throw new NoSuchElementException("Player data does not exist for " + uuid + " this should never be the case.");
     }
 
     public void set(@NotNull PlayerData playerData) {
